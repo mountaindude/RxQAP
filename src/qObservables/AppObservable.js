@@ -10,12 +10,29 @@ import GenericMeasureObservable from "./GenericMeasureObservable";
 import GenericObjectObservable from "./GenericObjectObservable";
 import GenericVariableObservable from "./GenericVariableObservable";
 import VariableObservable from "./VariableObservable";
+import QixApp from "../qix-classes/qix-app";
 
-class AppObservable extends QixObservable {
+class AppObservable extends Observable {
 
     constructor(source) {
         super();
-        this.source = source;
+
+        if(typeof source != "undefined") {
+            this.source = Observable.create(subscriber=>{
+                source.subscribe(s=>{
+                    if(s instanceof QixApp) {
+                        subscriber.next(s);
+                    }
+                    else {
+                        subscriber.error(new Error("Data type mismatch: Emitted value is not an instance of QixApp"));
+                    }
+                    
+                }, err=> {
+                    subscriber.error(err);
+                });
+            });
+        }
+    
     }
 
     lift(operator) {
@@ -27,6 +44,16 @@ class AppObservable extends QixObservable {
         observable.source = this;
         observable.operator = operator;
         return observable;
+    }
+
+    qLayouts() {
+        return this.mergeMap(q=>q.layout$);
+    }
+
+    qInvalidated() {
+        return this
+            .mergeMap(q=>q.invalidated$)
+            .let(o=>new AppObservable(o));
     }
     
 }
@@ -47,8 +74,8 @@ const qObs = {
 };
 
 outputs.forEach(e=>{
-    const methodName = e.method;
-    const methodNameOrig = methodName.slice(0,1).toUpperCase() + methodName.slice(1);
+    const methodName = "q" + e.method;
+    const methodNameOrig = e.method;
     const obsClass = qObs[e.obsType];
     AppObservable.prototype[methodName] = function(...args) {
         return this

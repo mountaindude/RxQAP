@@ -1,3 +1,7 @@
+import "core-js/es6/symbol"; // polyfill symbol to enable iterators in IE
+import "core-js/fn/function/name"; // polyfill function to enable function constructor.name in IE
+import "regenerator-runtime/runtime";
+
 import EngineSession from "./src/engine-session";
 import engineWrapper from "./src/engine-wrapper";
 import { Observable } from "rxjs";
@@ -11,7 +15,6 @@ import GenericObjectObservable from "./src/qObservables/GenericObjectObservable.
 import GenericVariableObservable from "./src/qObservables/GenericVariableObservable.js";
 import VariableObservable from "./src/qObservables/VariableObservable.js";
 import pack from "raw!./package.json";
-
 
 const RxQ = {
     version: JSON.parse(pack).version,

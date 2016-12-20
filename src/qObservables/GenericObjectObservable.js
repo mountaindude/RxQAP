@@ -3,12 +3,27 @@ import nonLiftedOperators from "./nonLiftedOperators";
 import QixObservable from "./QixObservable";
 import extendPrototype from "..//util/qix-extend-prototype";
 import outputTypes from "../util/qix-obs-types";
+import QixGenericObject from "../qix-classes/qix-generic-object";
 
 class GenericObjectObservable extends QixObservable {
 
     constructor(source) {
         super();
-        this.source = source;
+        if(typeof source != "undefined") {
+            this.source = Observable.create(subscriber=>{
+                source.subscribe(s=>{
+                    if(s instanceof QixGenericObject) {
+                        subscriber.next(s);
+                    }
+                    else {
+                        subscriber.error(new Error("Data type mismatch: Emitted value is not an instance of QixGenericObject"));
+                    }
+                    
+                }, err=> {
+                    subscriber.error(err);
+                });
+            });
+        }
     }
 
     lift(operator) {
@@ -22,6 +37,16 @@ class GenericObjectObservable extends QixObservable {
         return observable;
     }
 
+    qLayouts() {
+        return this.mergeMap(q=>q.layout$);
+    }
+
+    qInvalidated() {
+        return this
+            .mergeMap(q=>q.invalidated$)
+            .let(o=>new GenericObjectObservable(o));
+    }
+
 }
 
 // Add in QIX operators for global
@@ -33,8 +58,8 @@ const qObs = {
 };
 
 outputs.forEach(e=>{
-    const methodName = e.method;
-    const methodNameOrig = methodName.slice(0,1).toUpperCase() + methodName.slice(1);
+    const methodName = "q" + e.method;
+    const methodNameOrig = e.method;
     const obsClass = qObs[e.obsType];
     GenericObjectObservable.prototype[methodName] = function(...args) {
         return this

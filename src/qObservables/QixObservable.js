@@ -18,16 +18,6 @@ class QixObservable extends Observable {
         observable.operator = operator;
         return observable;
     }
-
-    invalidated() {
-        return this
-            .mergeMap(q=>q.invalidated$);
-    }
-
-    layouts() {
-        return Observable.of('')
-            .mergeMap(()=>this.mergeMap(q=>q.layout$));
-    }
     
 }
 
